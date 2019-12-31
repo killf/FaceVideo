@@ -1,14 +1,16 @@
 rm -rf test.html
-export TOTAL_MEMORY=671088640
+export TOTAL_MEMORY=67108864
 export EXPORTED_FUNCTIONS="['_main']"
 
 echo "Running Emscripten..."
-emcc main.cpp lib/lib/libavformat.a lib/lib/libavcodec.a lib/lib/libavutil.a lib/lib/libswscale.a \
-    -O0 \
-    -I "lib/include" \
+emcc main.c -L/home/killf/dlab/FaceVideo/dist/lib dist/lib/libavformat.a dist/lib/libavcodec.a dist/lib/libavutil.a dist/lib/libswscale.a \
+    -O0 -g \
+    -I "dist/include" \
+    -I "/home/killf/.emscripten_cache/wasm-obj/include" \
     -s WASM=1 \
     -s DEMANGLE_SUPPORT=1 \
     -s TOTAL_MEMORY=${TOTAL_MEMORY} \
+    -s ALLOW_MEMORY_GROWTH=1 \
     -s EXPORTED_FUNCTIONS="${EXPORTED_FUNCTIONS}" \
     -s EXTRA_EXPORTED_RUNTIME_METHODS="['addFunction']" \
     -s RESERVED_FUNCTION_POINTERS=14 \
@@ -17,6 +19,7 @@ emcc main.cpp lib/lib/libavformat.a lib/lib/libavcodec.a lib/lib/libavutil.a lib
     -s USE_SDL_IMAGE=2 \
     -s SDL2_IMAGE_FORMATS='["png","bmp","jpg"]' \
     --preload-file videos \
+    -s ASYNCIFY=1 \
     -o test.html
 
 echo "Finished Build"
