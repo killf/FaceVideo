@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <unistd.h>
+#include <pthread.h>
 
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -88,7 +90,7 @@ static int read_packet(void *opaque, uint8_t *buf, int buf_size)
     return buf_size;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char **argv)
 {
     init_sdl2();
 
@@ -200,10 +202,9 @@ int main(int argc, char *argv[])
 
     /* 开始读取视频帧 */
     av_init_packet(&avpkt);
-    // av_read_frame(fmt_ctx, &avpkt);
 
     int err = 0;
-    while (err >= 0)
+    while (1)
     {
         if ((err = av_read_frame(fmt_ctx, &avpkt)) < 0)
         {
@@ -223,7 +224,6 @@ int main(int argc, char *argv[])
             err = avcodec_receive_frame(codec_ctx, frame);
             if (err == AVERROR(EAGAIN) || err == AVERROR_EOF)
             {
-                // fprintf(stderr, "avcodec_receive_frame1 : %d\n", err);
                 err = 0;
                 break;
             }
@@ -247,6 +247,8 @@ int main(int argc, char *argv[])
             SDL_RenderClear(sdlRenderer);
             SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, &sdlRect);
             SDL_RenderPresent(sdlRenderer);
+
+            emscripten_sleep(1);
 
             printf("frame : %d\n", frame_count++);
         }
@@ -273,3 +275,13 @@ end:
 
     return 0;
 }
+
+// SDL参考:https://emscripten.org/docs/getting_started/FAQ.html?highlight=sdl
+// 使用SDL播放视频:https://www.cnblogs.com/aperolchen/p/9478174.html
+// ffmpeg+SDL:https://www.cnblogs.com/wxmcu/p/8729502.html
+//            https://www.cnblogs.com/yuanchenhui/p/ffmpeg-h264_decode.html
+// SDL2:https://github.com/Jipok/Nim-SDL2-and-Emscripten
+// SDL2开源项目:https://github.com/Jipok/Nim-SDL2-and-Emscripten
+// SDL实例：https://github.com/dragonCASTjosh/emscripten-sdk/tree/c1fd17f8002989c157a35b178a61b46a60409c9f/emscripten/incoming/tests
+//         https://github.com/dragonCASTjosh/emscripten-sdk/blob/c1fd17f8002989c157a35b178a61b46a60409c9f/emscripten/incoming/tests/test_browser.py
+//         https://www.yinchengli.com/2018/07/28/wasm-ffmpeg-get-video-frame/?tdsourcetag=s_pctim_aiomsg
